@@ -1,8 +1,17 @@
 import json
-import os
 import re
 
 __version__ = '1.0.0'
+
+
+def _parse_value(value):
+    if value.isdigit() or (value.startswith('-') and value[1:].isdigit()):
+        return int(value)
+
+    if re.match(r'^\d*\.\d+$', value):
+        return float(value)
+
+    return value
 
 
 def encode(obj, opt=None):
@@ -68,7 +77,7 @@ def decode(string):
             p = out[section] = out.get(section, {})
             continue
         key = unsafe(match[2])
-        value = unsafe(match[4]) if match[3] else True
+        value = _parse_value(unsafe(match[4])) if match[3] else True
         if value in ('true', 'True'):
             value = True
         elif value in ('false', 'False'):

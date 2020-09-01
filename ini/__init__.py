@@ -80,12 +80,15 @@ def decode(string, on_empty_key = EMPTY_KEY_SENTINEL):
             p = out[section] = out.get(section, {})
             continue
         key = unsafe(match[2])
-        if match[4].strip():
-            value = _parse_value(unsafe(match[4])) if match[3] else True
-        elif on_empty_key == EMPTY_KEY_SENTINEL:
-            raise ValueError(key)
+        if match[3]:
+            if match[4].strip():
+                value = _parse_value(unsafe(match[4]))
+            elif on_empty_key == EMPTY_KEY_SENTINEL:
+                raise ValueError(key)
+            else:
+                value = on_empty_key
         else:
-            value = on_empty_key
+            value = True
         if value in ('true', 'True'):
             value = True
         elif value in ('false', 'False'):

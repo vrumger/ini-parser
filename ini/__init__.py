@@ -59,7 +59,7 @@ def _dot_split(string):
     return re.sub(r'\\\.', '\u0001', string).split('.')
 
 
-EMPTY_KEY_SENTINEL = object
+EMPTY_KEY_SENTINEL = object()
 
 
 def decode(string, on_empty_key = EMPTY_KEY_SENTINEL):
@@ -83,7 +83,7 @@ def decode(string, on_empty_key = EMPTY_KEY_SENTINEL):
         if match[3]:
             if match[4].strip():
                 value = _parse_value(unsafe(match[4]))
-            elif on_empty_key == EMPTY_KEY_SENTINEL:
+            elif on_empty_key is EMPTY_KEY_SENTINEL:
                 raise ValueError(key)
             else:
                 value = on_empty_key

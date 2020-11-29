@@ -113,7 +113,8 @@ def decode(string, on_empty_key = EMPTY_KEY_SENTINEL):
 
     # {a:{y:1},"a.b":{x:2}} --> {a:{y:1,b:{x:2}}}
     # use a filter to return the keys that have to be deleted.
-    for k in out.keys():
+    _out = dict(out)
+    for k in _out.keys():
         if not out[k] or not isinstance(out[k], dict) or isinstance(out[k], list):
             continue
         # see if the parent section is also an object.

@@ -5,7 +5,7 @@ __version__ = '1.2.0'
 
 
 def _parse_value(value):
-    if value.isdigit() or (value.startswith('-') and value[1:].isdigit()):
+    if str(value).isdigit() or (value.startswith('-') and value[1:].isdigit()):
         return int(value)
 
     if re.match(r'^\d*\.\d+$', value):

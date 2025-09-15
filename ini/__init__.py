@@ -5,12 +5,11 @@ __version__ = '1.2.0'
 
 
 def _parse_value(value):
-    if isinstance(value, int) or value.isdigit() or (value.startswith('-') and value[1:].isdigit()):
-        return int(value)
-
-    if re.match(r'^\d*\.\d+$', value):
-        return float(value)
-
+    if isinstance(value, str):
+        if value.isdigit() or (value.startswith('-') and value[1:].isdigit()):
+            return int(value)
+        if re.match(r'^\d*\.\d+$', value):
+            return float(value)
     return value
 
 
@@ -30,15 +29,17 @@ def encode(obj, opt=None):
     separator = ' = ' if opt['whitespace'] else '='
 
     for k, v in obj.items():
-        if v and isinstance(v, list):
+        if isinstance(v, list):
+            if len(v) == 0:
+                out += safe(k) + separator + "'[]'" + '\n'
             for item in v:
                 out += safe(k + '[]') + separator + safe(item) + '\n'
-        elif v and isinstance(v, dict):
+        elif isinstance(v, dict):
             children.append(k)
         else:
             out += safe(k) + separator + safe(v) + '\n'
 
-    if opt.get('section') and len(out):
+    if opt.get('section'):
         out = '[' + safe(opt['section']) + ']' + '\n' + out
 
     for k in children:

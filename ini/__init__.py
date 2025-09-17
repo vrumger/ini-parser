@@ -50,8 +50,8 @@ def encode(obj, section=None, whitespace=True):
 
     for k in children:
         nk = '.'.join(_dot_split(k))
-        section = (section + '.' if section else '') + nk
-        child = encode(obj[k], section=section, whitespace=whitespace)
+        child_section = (section + '.' if section else '') + nk
+        child = encode(obj[k], section=child_section, whitespace=whitespace)
         if len(out) and len(child):
             out += '\n'
         out += child

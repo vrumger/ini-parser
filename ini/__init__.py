@@ -40,7 +40,7 @@ def encode(obj, section=None, whitespace=True):
             children.append(k)
         else:
             out += safe(k) + separator + safe(v) + '\n'
-    
+
     for comments in comments.values():
         for comment in comments:
             out += comment + '\n'
@@ -70,7 +70,9 @@ def decode(string, on_empty_key=EMPTY_KEY_SENTINEL, preserve_comments=False):
     out = ini_dict() if preserve_comments else {}
     p = out
     section = None
-    regex = re.compile(r'^(\s*[;#])|^\[([^\]]*)\]$|^([^=]+)(=(.*))?$', re.IGNORECASE)
+    regex = re.compile(
+        r'^(\s*[;#])|^\[([^\]]*)\]$|^([^=]+)(=(.*))?$', re.IGNORECASE,
+    )
     lines = re.split(r'[\r\n]+', string)
 
     for line in lines:
@@ -86,7 +88,9 @@ def decode(string, on_empty_key=EMPTY_KEY_SENTINEL, preserve_comments=False):
             continue
         if match[2]:
             section = unsafe(match[2])
-            p = out[section] = out.get(section, ini_dict() if preserve_comments else {})
+            p = out[section] = out.get(
+                section, ini_dict() if preserve_comments else {},
+            )
             continue
         key = unsafe(match[3])
         if match[4]:
@@ -126,13 +130,17 @@ def decode(string, on_empty_key=EMPTY_KEY_SENTINEL, preserve_comments=False):
     if preserve_comments:
         _out._comments = out._comments
     for k in _out.keys():
-        if not out[k] or not isinstance(out[k], dict) or isinstance(out[k], list):
+        if (
+            not out[k] or
+            not isinstance(out[k], dict) or
+            isinstance(out[k], list)
+        ):
             continue
         # see if the parent section is also an object.
         # if so, add it to that, and mark this one for deletion
         parts = _dot_split(k)
         p = out
-        l = parts.pop()
+        l = parts.pop()  # noqa: E741
         nl = re.sub(r'\\\.', '.', l)
         for part in parts:
             if part not in p or not isinstance(p[part], dict):
@@ -147,17 +155,23 @@ def decode(string, on_empty_key=EMPTY_KEY_SENTINEL, preserve_comments=False):
 
 
 def _is_quoted(val):
-    return (val[0] == '"' and val[-1] == '"') or (val[0] == "'" and val[-1] == "'")
+    return (
+        (val[0] == '"' and val[-1] == '"') or
+        (val[0] == "'" and val[-1] == "'")
+    )
 
 
 def safe(val):
-    return json.dumps(val) if \
-        (not isinstance(val, str) or
-         re.match(r'[=\r\n]', val) or
-         re.match(r'^\[', val) or
-         (len(val) > 1 and _is_quoted(val)) or
-         val != val.strip()) else \
-        val.replace(';', '\\;').replace('#', '\\#')
+    if (
+        not isinstance(val, str) or
+        re.match(r'[=\r\n]', val) or
+        re.match(r'^\[', val) or
+        (len(val) > 1 and _is_quoted(val)) or
+        val != val.strip()
+    ):
+        return json.dumps(val)
+
+    return val.replace(';', '\\;').replace('#', '\\#')
 
 
 def unsafe(val):
@@ -168,7 +182,7 @@ def unsafe(val):
             val = val[1:-1]
         try:
             val = json.loads(val)
-        except:
+        except json.JSONDecodeError:
             pass
     else:
         # walk the val to find the first not-escaped ; character

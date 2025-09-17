@@ -4,6 +4,12 @@ import re
 __version__ = '1.2.0'
 
 
+class ini_dict(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._comments = {}
+
+
 def _parse_value(value):
     if isinstance(value, str):
         if value.isdigit() or (value.startswith('-') and value[1:].isdigit()):
@@ -13,22 +19,18 @@ def _parse_value(value):
     return value
 
 
-def encode(obj, opt=None):
+def encode(obj, section=None, whitespace=True):
     children = []
     out = ''
+    separator = ' = ' if whitespace else '='
+    comments = dict(obj._comments) if isinstance(obj, ini_dict) else {}
 
-    if isinstance(opt, str):
-        opt = {
-            'section': opt,
-            'whitespace': True
-        }
-    else:
-        opt = opt or {}
-        opt['whitespace'] = opt.get('whitespace', True)
+    for i, (k, v) in enumerate(obj.items()):
+        if i in comments:
+            for comment in comments[i]:
+                out += comment + '\n'
+            del comments[i]
 
-    separator = ' = ' if opt['whitespace'] else '='
-
-    for k, v in obj.items():
         if isinstance(v, list):
             if len(v) == 0:
                 out += safe(k) + separator + "'[]'" + '\n'
@@ -38,17 +40,18 @@ def encode(obj, opt=None):
             children.append(k)
         else:
             out += safe(k) + separator + safe(v) + '\n'
+    
+    for comments in comments.values():
+        for comment in comments:
+            out += comment + '\n'
 
-    if opt.get('section'):
-        out = '[' + safe(opt['section']) + ']' + '\n' + out
+    if section:
+        out = '[' + safe(section) + ']' + '\n' + out
 
     for k in children:
         nk = '.'.join(_dot_split(k))
-        section = (opt['section'] + '.' if opt.get('section') else '') + nk
-        child = encode(obj[k], {
-            'section': section,
-            'whitespace': opt['whitespace']
-        })
+        section = (section + '.' if section else '') + nk
+        child = encode(obj[k], section=section, whitespace=whitespace)
         if len(out) and len(child):
             out += '\n'
         out += child
@@ -63,27 +66,32 @@ def _dot_split(string):
 EMPTY_KEY_SENTINEL = object()
 
 
-def decode(string, on_empty_key = EMPTY_KEY_SENTINEL):
-    out = {}
+def decode(string, on_empty_key=EMPTY_KEY_SENTINEL, preserve_comments=False):
+    out = ini_dict() if preserve_comments else {}
     p = out
     section = None
-    regex = re.compile(r'^\[([^\]]*)\]$|^([^=]+)(=(.*))?$', re.IGNORECASE)
+    regex = re.compile(r'^(\s*[;#])|^\[([^\]]*)\]$|^([^=]+)(=(.*))?$', re.IGNORECASE)
     lines = re.split(r'[\r\n]+', string)
 
     for line in lines:
-        if not line or re.match(r'^\s*[;#]', line):
+        if not line:
             continue
         match = regex.match(line)
         if not match:
             continue
         if match[1]:
-            section = unsafe(match[1])
-            p = out[section] = out.get(section, {})
+            if preserve_comments:
+                p._comments[len(p)] = p._comments.get(len(p), [])
+                p._comments[len(p)].append(line)
             continue
-        key = unsafe(match[2])
-        if match[3]:
-            if match[4].strip():
-                value = _parse_value(unsafe(match[4]))
+        if match[2]:
+            section = unsafe(match[2])
+            p = out[section] = out.get(section, ini_dict() if preserve_comments else {})
+            continue
+        key = unsafe(match[3])
+        if match[4]:
+            if match[5].strip():
+                value = _parse_value(unsafe(match[5]))
             elif on_empty_key is EMPTY_KEY_SENTINEL:
                 raise ValueError(key)
             else:
@@ -114,7 +122,9 @@ def decode(string, on_empty_key = EMPTY_KEY_SENTINEL):
 
     # {a:{y:1},"a.b":{x:2}} --> {a:{y:1,b:{x:2}}}
     # use a filter to return the keys that have to be deleted.
-    _out = dict(out)
+    _out = ini_dict(out) if preserve_comments else dict(out)
+    if preserve_comments:
+        _out._comments = out._comments
     for k in _out.keys():
         if not out[k] or not isinstance(out[k], dict) or isinstance(out[k], list):
             continue

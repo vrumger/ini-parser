@@ -29,7 +29,7 @@ You can read, manipulate and write the ini-file like so:
 ```python
 import ini
 
-config = ini.parse(open('config.ini').read())
+config = ini.parse(open('config.ini').read(), preserve_comments=True)
 
 config['scope'] = 'local'
 config['database']['database'] = 'use_another_database'
@@ -38,7 +38,7 @@ del config['paths']['default']['datadir']
 config['paths']['default']['array'].append('fourth value')
 
 with open('config_modified.ini', 'w+') as f:
-    f.write(ini.stringify(config, {'section': 'section'}))
+    f.write(ini.stringify(config, section='section'))
 ```
 
 This will result in a file called `config_modified.ini` being written to the filesystem with the following content:
@@ -62,15 +62,18 @@ tmpdir = /tmp
 
 ## API
 
-### decode(inistring)
+### decode(inistring, on_empty_key=None, preserve_comments=True)
 
 Decode the ini-style formatted `inistring` into a nested object.
 
-### parse(inistring)
+-   `on_empty_key`: Value to use when a key with no value is encountered during parsing. If set, any key in the INI file that lacks a value will be assigned this value.
+-   `preserve_comments`: Boolean to specify whether to preserve comments when parsing. If set to `True`, comments will be included in the output and parsed from the input. Default is `False`.
+
+### parse(inistring, on_empty_key=None, preserve_comments=True)
 
 Alias for `decode(inistring)`
 
-### encode(object, [options])
+### encode(object, section=None, whitespace=True)
 
 Encode the object `object` into an ini-style formatted string. If the
 optional parameter `section` is given, then all top-level properties
@@ -79,16 +82,10 @@ prepended to all sub-sections, see the usage example above.
 
 The `options` object may contain the following:
 
-- `section` A string which will be the first `section` in the encoded
-    ini data. Defaults to none.
-- `whitespace` Boolean to specify whether to put whitespace around the
-    `=` character. By default, whitespace is omitted, to be friendly to
-    some persnickety old parsers that don't tolerate it well. But some
-    find that it's more human-readable and pretty with the whitespace.
+-   `section` - A string which will be the first section in the encoded ini data. Defaults to none.
+-   `whitespace` - Boolean to specify whether to put whitespace around the `=` character. By default, whitespace is omitted, to be friendly to some older parsers. If set to `True`, whitespace will be added for readability.
 
-If a `string` options is passed in, then it is assumed to be the `section` value.
-
-### stringify(object, [options])
+### stringify(object, section=None, whitespace=True)
 
 Alias for `encode(object, [options])`
 

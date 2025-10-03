@@ -103,3 +103,77 @@ def test_decode_multisection_with_comments():
 
     encoded = encode(result)
     assert encoded == ini_str
+
+
+def test_multiline_value_with_various_newline_types():
+    test_cases = [
+        'line1\nline2',
+        'line1\r\nline2',
+        'line1\rline2',
+        'line1\nline2\nline3',
+        '\nstarting_newline',
+        'ending_newline\n',
+        '\n\n\nmultiple\n\n',
+    ]
+
+    for test_value in test_cases:
+        config = {}
+        config['multiline'] = test_value
+        encoded = encode(config)
+        decoded = decode(encoded)
+
+        assert decoded['multiline'] == test_value
+
+
+def test_multiline_value_in_sections():
+    config = {'section': {'key': 'value1\nvalue2'}}
+    encoded = encode(config)
+    decoded = decode(encoded)
+
+    assert 'section' in decoded
+    assert decoded['section']['key'] == 'value1\nvalue2'
+    assert 'value2' not in decoded['section']
+
+
+def test_multiline_value_with_special_chars():
+    special_values = [
+        'line1\nline2=value',
+        'line1\n[section]',
+        'line1\n;comment',
+        'line1\n#comment',
+        'key=val\nother=val2',
+    ]
+
+    for test_value in special_values:
+        config = {}
+        config['special'] = test_value
+        encoded = encode(config)
+        decoded = decode(encoded)
+
+        assert decoded['special'] == test_value
+
+
+def test_multiline_arrays():
+    config = {}
+    config['arr'] = ['item1\nline2', 'item2', 'item3\nmulti\nline']
+    encoded = encode(config)
+    decoded = decode(encoded)
+
+    assert decoded['arr'] == ['item1\nline2', 'item2', 'item3\nmulti\nline']
+
+
+def test_empty_and_whitespace_multiline():
+    test_cases = [
+        '\n',
+        '   \n   ',
+        'line1\n\nline3',
+        '  line1  \n  line2  ',
+    ]
+
+    for test_value in test_cases:
+        config = {}
+        config['whitespace'] = test_value
+        encoded = encode(config)
+        decoded = decode(encoded)
+
+        assert decoded['whitespace'] == test_value

@@ -164,8 +164,8 @@ def _is_quoted(val):
 def safe(val):
     if (
         not isinstance(val, str) or
-        re.match(r'[=\r\n]', val) or
-        re.match(r'^\[', val) or
+        re.search(r'[=\r\n]', val) or
+        re.search(r'^\[', val) or
         (len(val) > 1 and _is_quoted(val)) or
         val != val.strip()
     ):

@@ -1,7 +1,10 @@
+import pytest
+
 from ini import _parse_value
 from ini import decode
 from ini import encode
 from ini import ini_dict
+from ini import IniKeyAlreadyExists
 from ini import safe
 from ini import unsafe
 
@@ -177,3 +180,16 @@ def test_empty_and_whitespace_multiline():
         decoded = decode(encoded)
 
         assert decoded['whitespace'] == test_value
+
+
+def test_ini_with_same_root_and_section_keys():
+    ini_content = """foo = bar
+foo = bar
+
+[foo]
+bar = baz
+bar = baz
+baz = foo"""
+
+    with pytest.raises(IniKeyAlreadyExists):
+        decode(ini_content)

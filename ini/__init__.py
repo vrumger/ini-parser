@@ -4,6 +4,10 @@ import re
 __version__ = '2.0.1'
 
 
+class IniKeyAlreadyExists(Exception):
+    pass
+
+
 class ini_dict(dict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -88,6 +92,10 @@ def decode(string, on_empty_key=EMPTY_KEY_SENTINEL, preserve_comments=False):
             continue
         if match[2]:
             section = unsafe(match[2])
+            if section in out and not isinstance(out[section], dict):
+                raise IniKeyAlreadyExists(
+                    f'Section "{section}" already exists as a key',
+                )
             p = out[section] = out.get(
                 section, ini_dict() if preserve_comments else {},
             )
@@ -116,6 +124,11 @@ def decode(string, on_empty_key=EMPTY_KEY_SENTINEL, preserve_comments=False):
                 p[key] = []
             elif not isinstance(p[key], list):
                 p[key] = [p[key]]
+
+        if key in p and not isinstance(p[key], list):
+            raise IniKeyAlreadyExists(
+                f'Key "{key}" already exists in section "{section or "root"}"',
+            )
 
         # safeguard against resetting a previously defined
         # array by accidentally forgetting the brackets

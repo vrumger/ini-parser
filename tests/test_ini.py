@@ -193,3 +193,15 @@ baz = foo"""
 
     with pytest.raises(IniKeyAlreadyExists):
         decode(ini_content)
+
+
+def test_section_with_comment():
+    ini_content = '[section] ; this is a comment\nkey = value'
+    decoded = decode(ini_content, preserve_comments=True)
+
+    assert 'section' in decoded
+    assert decoded['section']['key'] == 'value'
+
+    encoded = encode(decoded)
+    # don't currently have support for preserving inline comments
+    assert encoded == '[section]\nkey = value\n'

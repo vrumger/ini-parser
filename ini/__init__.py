@@ -75,7 +75,15 @@ def decode(string, on_empty_key=EMPTY_KEY_SENTINEL, preserve_comments=False):
     p = out
     section = None
     regex = re.compile(
-        r'^(\s*[;#])|^\[([^\]]*)\]$|^([^=]+)(=(.*))?$', re.IGNORECASE,
+        (
+            # full line comments
+            r'^(\s*[;#])|'
+            # section headers with optional inline comments
+            r'^\[([^\]]*)\](?:\s*[;#].*)?$|'
+            # key=value pairs (value is optional)
+            r'^([^=]+)(=(.*))?$'
+        ),
+        re.IGNORECASE,
     )
     lines = re.split(r'[\r\n]+', string)
 
